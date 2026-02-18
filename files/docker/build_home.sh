@@ -10,7 +10,12 @@ EOF
 
 # Setup default home directory with cache directories
 # Create actual directories instead of symlinks to /dev/shm to ensure
-# compatibility when running as non-root user with --user flag
+# compatibility when running as non-root user with --user flag.
+#
+# NOTE: Using mode 777 is intentional for Docker --user compatibility.
+# The container is designed to run with arbitrary UIDs (e.g., --user $(id -u):$(id -g)),
+# so the cache directories must be world-writable. This is safe in the container context
+# where /home/default is a shared scratch space for Snakemake's cache.
 mkdir -p /home/default/.cache -m 777
 mkdir -p /home/default/.config -m 777
 
