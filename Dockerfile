@@ -1,3 +1,17 @@
+# NOTE: This Dockerfile was generated with AI assistance and has not been
+# validated with a full end-to-end Docker build. Review carefully before use.
+#
+# Common pitfalls:
+#   - build_deps.sh downloads binaries from external URLs (UCSC, GitHub releases)
+#     that may be unavailable or change over time. Pin versions and verify URLs.
+#   - The base image (python:3.12-bookworm) must satisfy system library
+#     requirements for samtools, minimap2, LRA, and pav3's Python dependencies.
+#   - "pip install" resolves pav3 dependencies at build time. Dependency version
+#     conflicts (especially snakemake, polars, numpy) can cause silent failures.
+#     Run "pav3 --version" in the built image to verify installation.
+#   - The ENTRYPOINT is "pav3" (the CLI). If your workflow expects the old PAV2
+#     run script, use "files/docker/run" as a compatibility shim instead.
+
 #
 # Stage: build binary dependencies
 #

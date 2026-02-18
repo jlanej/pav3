@@ -1,5 +1,10 @@
 # PAV3 Mini Test Dataset
 
+> **Note**: The integration test script, summary script, pav.json, assemblies.tsv,
+> and Dockerfile changes in this PR were generated with AI assistance. They have
+> not been validated with a full end-to-end Docker build and pav3 run. Review all
+> files carefully before relying on them in CI or production workflows.
+
 This directory contains a minimal test dataset for PAV3 integration testing.
 
 ## Source Data
@@ -57,3 +62,17 @@ This makes it clear that:
 - The reference coordinates in output VCFs will be relative to the extracted region
 - Reference offset is stored in config.yaml for coordinate translation if needed
 - Generated on: 2026-02-18
+
+## Common Pitfalls
+
+- **Config file names**: pav3 looks for `pav.json` and `assemblies.tsv` by default.
+  The legacy `config.json` and `samples.tsv` are kept for reference but are *not*
+  used by pav3. If you see "Missing pav.json" errors, check the file names.
+- **Column names**: `assemblies.tsv` must use `NAME`, `HAP1`, `HAP2` headers (not
+  `SAMPLE`). pav3's `read_assembly_table()` will error on unrecognized column names.
+- **Region boundaries**: The mini reference covers only ~2 Mb of chr17. Contigs
+  that extend beyond this region may align partially, which can produce edge-effect
+  artifacts in variant calls. This is expected for a small test region.
+- **Index files**: The `.fai` and `.gzi` index files must stay in sync with their
+  corresponding `.fa.gz` files. If you regenerate the FASTA, re-index with
+  `samtools faidx`.

@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
 """Summarize PAV3 variant calling results from an output directory.
 
+NOTE: AI-generated script. Review before use.
+
 Reads VCF and BED output files produced by pav3 and prints a concise
 summary of structural variants, indels, and SNVs found in the run.
 
 Usage:
     python tests/summarize_results.py <output_dir>
+
+Common pitfalls:
+    - This script parses VCF INFO fields by splitting on ";" and "=". Non-standard
+      or multi-value INFO entries may be silently dropped. Verify against bcftools
+      stats for authoritative counts.
+    - gzip.open may fail on bgzipped VCFs produced by htslib. If you see
+      "not in gzip format" errors, use pysam or bcftools to decompress first.
+    - SVLEN may be absent for SNVs or symbolic alleles. The length summary only
+      covers records that include a numeric SVLEN.
+    - The file-type categorization uses substring matching on the filename (e.g.
+      ".vcf" anywhere in the name). Rename collisions (e.g. "vcf_index.txt") would
+      be miscategorized.
 """
 
 import argparse

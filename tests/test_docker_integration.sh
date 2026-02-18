@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# NOTE: AI-generated integration test. Review before use.
+#
 # Integration test for pav3 Docker image.
 #
 # Builds the Docker image, runs pav3 on the mini test dataset, and validates
@@ -14,6 +16,23 @@
 # Prerequisites:
 #   - Docker installed and accessible
 #   - Run from the repository root directory
+#
+# Common pitfalls:
+#   - The Docker build downloads external binaries (samtools, minimap2, LRA,
+#     bedToBigBed). Network restrictions or URL changes will cause build
+#     failures. Check build_deps.sh if the build fails during downloads.
+#   - The test data region (~2 Mb of chr17) is small. PAV may produce few or
+#     no variants depending on aligner behavior at region boundaries. An empty
+#     VCF is not necessarily a bug—inspect alignment tables to diagnose.
+#   - VCF field names (SVTYPE, SVLEN) are assumed by the summary grep commands.
+#     If pav3 changes its VCF INFO keys, the counts will silently report 0.
+#   - The "--user" Docker flag maps host UID/GID into the container. On some
+#     systems (rootless Docker, SELinux) this may cause permission errors. Try
+#     removing the --user flag or adding ":z" to the bind mount if you see
+#     "permission denied" on output files.
+#   - Snakemake may re-run rules unnecessarily if file timestamps are not
+#     preserved during the copy step. The --rerun-triggers=mtime flag in pav3
+#     mitigates this, but be aware of it when debugging unexpected reruns.
 
 set -euo pipefail
 

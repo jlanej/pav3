@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
+# NOTE: AI-generated compatibility shim. Review before use.
+#
 # Run PAV3 via the pav3 CLI. This script is provided for backward compatibility
 # with container workflows that reference the run script directly.
 #
 # All arguments are passed to "pav3 batch".
 #
-# Note: The preferred entrypoint is now "pav3" directly.
+# Common pitfalls:
+#   - This script assumes "pav3" is on PATH. If calling outside Docker, ensure
+#     the pav3 package is installed (pip install .) and the virtualenv is active.
+#   - The old PAV2 run script accepted raw Snakemake flags (e.g. -j 4). The
+#     pav3 CLI uses --cores instead. Existing PAV2 invocations will need to be
+#     updated. See "pav3 batch --help" for the current option syntax.
+#   - pav3 expects "pav.json" (not "config.json") and "assemblies.tsv" (not
+#     "samples.tsv") in the working directory. Verify file names before running.
 
 exec pav3 batch "$@"
