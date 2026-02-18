@@ -62,8 +62,10 @@ RUN pip3 install --no-cache-dir .
 # Verify the installation is from local source by checking for a known fix
 # The score_op_arr method should return float (not numpy float64)
 RUN python3 -c "import sys, os; \
-    site_pkg = [p for p in sys.path if 'site-packages' in p][0]; \
-    score_py = os.path.join(site_pkg, 'pav3', 'align', 'score.py'); \
+    site_pkgs = [p for p in sys.path if 'site-packages' in p]; \
+    assert site_pkgs, 'No site-packages directory found'; \
+    score_py = os.path.join(site_pkgs[0], 'pav3', 'align', 'score.py'); \
+    assert os.path.exists(score_py), f'File not found: {score_py}'; \
     content = open(score_py).read(); \
     assert 'return float(np.sum(np.vectorize' in content, 'Float32/Float64 fix not found'; \
     print('✓ Installation verified: code is from local repository')"
