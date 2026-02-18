@@ -63,16 +63,69 @@ jobs:
           cp -r tests/test_data/assemblies "${WORK_DIR}/"
           cp tests/test_data/pav.json "${WORK_DIR}/"
           cp tests/test_data/assemblies.tsv "${WORK_DIR}/"
+          
+          # Ensure directory is writable by the user running in the container
+          chmod -R u+w "${WORK_DIR}"
+          
+          echo "=== Working directory structure ==="
+          ls -la "${WORK_DIR}"
+          echo ""
+          echo "=== Directory permissions ==="
+          stat "${WORK_DIR}"
+          echo ""
+          echo "=== Config files ==="
+          cat "${WORK_DIR}/pav.json"
+          cat "${WORK_DIR}/assemblies.tsv"
+
+      - name: Verify files in container
+        run: |
+          echo "=== Verifying files are accessible from container ==="
+          docker run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}" \
+            --user "$(id -u):$(id -g)" \
+            --workdir "${WORK_DIR}" \
+            --entrypoint /bin/bash \
+            pav3-test \
+            -c "ls -la && echo '---' && cat pav.json && echo '---' && cat assemblies.tsv && echo '---' && ls -la ref/ && ls -la assemblies/"
+
+      - name: Test Snakemake --help
+        run: |
+          echo "=== Testing Snakemake is accessible ==="
+          docker run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}" \
+            --user "$(id -u):$(id -g)" \
+            --workdir "${WORK_DIR}" \
+            -e HOME=/home/default \
+            --entrypoint python3 \
+            pav3-test \
+            -m snakemake --help | head -20
 
       - name: Run pav3 batch
         run: |
+          echo "=== Running pav3 batch with verbose output ==="
+          set +e
           docker run --rm \
             -v "${WORK_DIR}:${WORK_DIR}" \
             --user "$(id -u):$(id -g)" \
             --workdir "${WORK_DIR}" \
             -e HOME=/home/default \
             pav3-test \
-            batch --cores 4 --keep-going
+            batch --cores 4 --keep-going --verbose --debug 2>&1 | tee "${GITHUB_WORKSPACE}/pav3-output.log"
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "=== PAV3 batch command failed with exit code $EXIT_CODE ==="
+            echo "=== Last 100 lines of output ==="
+            tail -100 "${GITHUB_WORKSPACE}/pav3-output.log"
+            echo ""
+            echo "=== Trying without --user flag to check if it's a permissions issue ==="
+            docker run --rm \
+              -v "${WORK_DIR}:${WORK_DIR}" \
+              --workdir "${WORK_DIR}" \
+              pav3-test \
+              batch --cores 4 --keep-going --verbose --debug 2>&1 | head -100 || echo "Also failed without --user flag"
+            exit $EXIT_CODE
+          fi
 
       - name: Validate output
         run: |
