@@ -40,13 +40,22 @@ The images have **NOT** been fully validated for production use. The Dockerfile,
 4. Consult with PAV3 maintainers
 
 **Pull Published Images:**
+
+The metadata action sanitizes branch names and creates appropriate tags. For example:
+- `main` branch → `ghcr.io/jlanej/pav3:main-testing`
+- `dev` branch → `ghcr.io/jlanej/pav3:dev-testing`
+- Feature branches → sanitized format (slashes replaced)
+
 ```bash
-docker pull ghcr.io/jlanej/pav3:<branch>-testing
+# Example for main branch:
+docker pull ghcr.io/jlanej/pav3:main-testing
+
+# Check the Actions run summary for exact tags generated
 ```
 
 **Run the Image:**
 ```bash
-docker run --rm ghcr.io/jlanej/pav3:<branch>-testing --version
+docker run --rm ghcr.io/jlanej/pav3:main-testing --version
 ```
 
 ## Development Notes

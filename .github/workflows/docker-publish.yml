@@ -127,7 +127,10 @@ jobs:
 
       - name: Create image manifest summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # Extract the first tag from the metadata output for examples
+          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          
+          cat >> $GITHUB_STEP_SUMMARY << EOF
           ## 🐳 Docker Image Published
 
           **⚠️ AI-GENERATED IMAGE - TESTING ONLY ⚠️**
@@ -136,24 +139,24 @@ jobs:
           **DO NOT use for production or scientific publication without thorough review.**
 
           ### Published Tags
-          ```
+          \`\`\`
           ${{ steps.meta.outputs.tags }}
-          ```
+          \`\`\`
 
           ### Pull Command
-          ```bash
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}${{ github.event.inputs.tag_suffix || '-testing' }}
-          ```
+          \`\`\`bash
+          docker pull ${FIRST_TAG}
+          \`\`\`
 
           ### Run Command Example
-          ```bash
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}${{ github.event.inputs.tag_suffix || '-testing' }} --version
-          ```
+          \`\`\`bash
+          docker run --rm ${FIRST_TAG} --version
+          \`\`\`
 
           ### Labels Applied
-          - `ai.generated=true`
-          - `ai.purpose=testing`
-          - `ai.warning=Use at your own risk`
+          - \`ai.generated=true\`
+          - \`ai.purpose=testing\`
+          - \`ai.warning=Use at your own risk\`
 
           ---
           **Image Maintainer Note:** Review and validate this image before recommending to users.
