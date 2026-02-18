@@ -63,6 +63,7 @@ For HPC environments that use Apptainer (formerly Singularity) instead of Docker
 apptainer build pav3.sif docker-daemon://pav3-test:latest
 
 # Option 2: Build from a published image (once available and validated)
+# NOTE: Verify the image path and that it's been validated before use
 # apptainer build pav3.sif docker://ghcr.io/jlanej/pav3:main-testing
 
 # Option 3: Build from the Dockerfile directly

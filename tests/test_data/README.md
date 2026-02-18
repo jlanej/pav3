@@ -58,7 +58,7 @@ apptainer exec \
   pav3 batch --cores 4 --keep-going
 ```
 
-For more examples and HPC-specific guidance, see the "Running with Apptainer/Singularity on HPC" section in the main README.
+For more examples and HPC-specific guidance, see the [Running with Apptainer/Singularity on HPC](../../README.md#running-with-apptainersingularity-on-hpc) section in the main README.
 
 To summarize results from a completed run:
 ```bash
