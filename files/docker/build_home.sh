@@ -19,5 +19,6 @@ EOF
 mkdir -p /home/default/.cache -m 777
 mkdir -p /home/default/.config -m 777
 
-# Make /home/default world-writable so any user can write to it
+# Ensure parent directory is also world-writable
+# (mkdir -m only sets permissions on the final component, not parents)
 chmod -R 777 /home/default
