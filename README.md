@@ -2,6 +2,20 @@
 <p align="center">Phased Assembly Variant Caller</p>
 
 ***
+
+> [!CAUTION]
+> ## ⚠️ This is a TESTING FORK — Not for Production Use ⚠️
+>
+> **This repository is a fork of the official PAV project, maintained solely for testing and development purposes.**
+>
+> If you are looking to use PAV for your research, please use the official repository:
+>
+> **👉 [https://github.com/BeckLaboratory/pav](https://github.com/BeckLaboratory/pav) 👈**
+>
+> The code, Docker images, and workflows in this fork may be incomplete, untested, or out of date.
+> **Do not** use this fork for production analyses or scientific publications.
+
+***
 <!-- Templated header from the pbsv github page: https://github.com/PacificBiosciences/pbsv -->
 
 Variant caller for assembled genomes.
@@ -160,6 +174,110 @@ PAV may use pre-release versions with a suffix for development releases (".devN"
 release-candidate ("rcN") where "N" is an integer greater than 0. For example, "3.0.0.dev1" is a development version,
 and "3.0.0a1" is an early alpha version, and "3.0.0rc1" is a release candidate, all of which precede the "3.0.0"
 release and should not be considered production-ready.
+
+
+## Docker image (testing only)
+
+> [!WARNING]
+> The Docker images published from this fork are for **testing only**. For production use, refer to the
+> [official PAV repository](https://github.com/BeckLaboratory/pav).
+
+A Docker image is published to the GitHub Container Registry (ghcr.io) via the
+[docker-publish workflow](.github/workflows/docker-publish.yml). The workflow is manual-trigger only
+(`workflow_dispatch`) and tags images with a `-testing` suffix by default.
+
+### Pulling the image
+
+```bash
+docker pull ghcr.io/jlanej/pav3:main-testing
+```
+
+### Running with Docker
+
+```bash
+docker run --rm \
+  -v /path/to/workdir:/data \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/home/default \
+  --workdir /data \
+  ghcr.io/jlanej/pav3:main-testing \
+  batch --cores 4
+```
+
+## Using the Docker image on HPC with Apptainer / Singularity
+
+[Apptainer](https://apptainer.org/) (formerly Singularity) lets you run Docker containers on HPC
+clusters where Docker is typically not available.
+
+### Pull and convert the image
+
+Convert the GHCR Docker image into a Singularity Image Format (SIF) file:
+
+```bash
+apptainer pull pav3-testing.sif docker://ghcr.io/jlanej/pav3:main-testing
+```
+
+Or using the legacy `singularity` command:
+
+```bash
+singularity pull pav3-testing.sif docker://ghcr.io/jlanej/pav3:main-testing
+```
+
+> **Tip:** Run the `pull` command on a login node or build host with internet access, then transfer
+> the `.sif` file to your compute environment if needed.
+
+### Running interactively
+
+```bash
+apptainer exec pav3-testing.sif pav3 --version
+```
+
+### Running with bind mounts
+
+HPC file systems (e.g. `/scratch`, `/gpfs`) must be explicitly bound into the container:
+
+```bash
+apptainer exec \
+  --bind /scratch:/scratch \
+  --bind /gpfs/data:/gpfs/data \
+  pav3-testing.sif \
+  pav3 batch --cores 4
+```
+
+### Example SLURM job script
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=pav3
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=24:00:00
+#SBATCH --output=pav3_%j.out
+
+# Path to the SIF image
+SIF=/path/to/pav3-testing.sif
+
+# Working directory containing pav.json and assemblies.tsv
+cd /scratch/$USER/pav_run
+
+apptainer exec \
+  --bind /scratch:/scratch \
+  --bind /gpfs/data:/gpfs/data \
+  "$SIF" \
+  pav3 batch --cores "$SLURM_CPUS_PER_TASK"
+```
+
+### Troubleshooting
+
+* **"FATAL: could not open image"** -- Verify the `.sif` file exists and is not corrupted.
+  Re-pull if needed.
+* **Bind mount errors** -- Ensure the host paths you bind actually exist on the compute node.
+  Some clusters auto-bind common paths; check your site documentation.
+* **Permission errors / Snakemake cache** -- Apptainer runs as your user by default (no `--user`
+  flag needed), so `HOME` is typically set correctly. If you encounter cache write errors, set
+  `--env HOME=/home/default` or `export APPTAINER_HOME=/home/default`.
+* **Out of disk in `/tmp`** -- Apptainer uses `/tmp` for ephemeral storage. Set
+  `APPTAINER_TMPDIR` to a path with sufficient space if the default is too small.
 
 
 ## Cite PAV
