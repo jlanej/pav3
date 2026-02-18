@@ -789,7 +789,7 @@ class InversionVariant(Variant):
                             .filter(~pl.col('is_aligned'))
                             .select(
                                 pl.col('len_qry')
-                                .map_elements(caller_resources.score_model.gap)
+                                .map_elements(caller_resources.score_model.gap, return_dtype=pl.Float64)
                                 .sum()
                             ).item()
                     )
@@ -912,7 +912,7 @@ class ComplexVariant(Variant):
                 self.df_ref_trace
                 .filter(pl.col('type') == 'DEL')
                 .select((pl.col('end') - pl.col('pos')).map_elements(
-                    caller_resources.score_model.gap, return_dtype=pl.Float32
+                    caller_resources.score_model.gap, return_dtype=pl.Float64
                 ).sum())
                 .item()
             )
