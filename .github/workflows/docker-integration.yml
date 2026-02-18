@@ -39,6 +39,8 @@ jobs:
     name: Build & Run pav3 Docker
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
