@@ -500,6 +500,6 @@ def score_segment_transitions(
     return score_variant + (
         df_segment
         .filter(pl.col('is_aligned') & ~ pl.col('is_anchor'))
-        .select(pl.col('len_qry').map_elements(caller_resources.score_model.gap, return_dtype=pl.Float32).sum())
+        .select(pl.col('len_qry').map_elements(caller_resources.score_model.gap, return_dtype=pl.Float64).sum())
         .item()
     )

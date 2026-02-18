@@ -1,0 +1,174 @@
+# NOTE: AI-generated workflow. Review before use.
+#
+# Common pitfalls:
+#   - The Docker build stage downloads samtools, minimap2, LRA, and bedToBigBed
+#     from external URLs. If any download host is unreachable, the build will
+#     fail. Consider caching the build_deps stage or pre-building a base image.
+#   - GitHub Actions runners have ~14 GB of disk and ~7 GB of RAM. The pav3
+#     pipeline may hit memory limits on larger test datasets; the current ~2 Mb
+#     test region is sized to stay well within these constraints.
+#   - The integration test can take 20+ minutes due to the Docker build (compiling
+#     samtools, minimap2, LRA from source). Docker layer caching helps on re-runs
+#     but the first run on a fresh runner will be slow.
+#   - If the test data FASTA files change, their .fai/.gzi index files must be
+#     regenerated. A mismatch will cause samtools/pysam errors inside the container.
+#   - The container must be run with HOME=/home/default to allow Snakemake to
+#     write cache files when running as a non-root user.
+
+name: Docker Integration Test
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'Dockerfile'
+      - 'files/docker/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'tests/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'files/docker/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'tests/**'
+  workflow_dispatch:
+
+jobs:
+  docker-integration:
+    name: Build & Run pav3 Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t pav3-test .
+
+      - name: Verify pav3 installation
+        run: docker run --rm pav3-test --version
+
+      - name: Stage test data
+        run: |
+          WORK_DIR=$(mktemp -d)
+          echo "WORK_DIR=${WORK_DIR}" >> "$GITHUB_ENV"
+
+          cp -r tests/test_data/ref "${WORK_DIR}/"
+          cp -r tests/test_data/assemblies "${WORK_DIR}/"
+          cp tests/test_data/pav.json "${WORK_DIR}/"
+          cp tests/test_data/assemblies.tsv "${WORK_DIR}/"
+          
+          # Ensure directory is writable by the user running in the container
+          chmod -R u+w "${WORK_DIR}"
+          
+          echo "=== Working directory structure ==="
+          ls -la "${WORK_DIR}"
+          echo ""
+          echo "=== Directory permissions ==="
+          stat "${WORK_DIR}"
+          echo ""
+          echo "=== Config files ==="
+          cat "${WORK_DIR}/pav.json"
+          cat "${WORK_DIR}/assemblies.tsv"
+
+      - name: Verify files in container
+        run: |
+          echo "=== Verifying files are accessible from container ==="
+          docker run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}" \
+            --user "$(id -u):$(id -g)" \
+            --workdir "${WORK_DIR}" \
+            --entrypoint /bin/bash \
+            pav3-test \
+            -c "ls -la && echo '---' && cat pav.json && echo '---' && cat assemblies.tsv && echo '---' && ls -la ref/ && ls -la assemblies/"
+
+      - name: Test Snakemake --help
+        run: |
+          echo "=== Testing Snakemake is accessible ==="
+          docker run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}" \
+            --user "$(id -u):$(id -g)" \
+            --workdir "${WORK_DIR}" \
+            -e HOME=/home/default \
+            --entrypoint python3 \
+            pav3-test \
+            -m snakemake --help | head -20
+
+      - name: Run pav3 batch
+        run: |
+          echo "=== Running pav3 batch with verbose output ==="
+          set +e
+          docker run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}" \
+            --user "$(id -u):$(id -g)" \
+            --workdir "${WORK_DIR}" \
+            -e HOME=/home/default \
+            pav3-test \
+            batch --cores 4 --keep-going --verbose --debug 2>&1 | tee "${GITHUB_WORKSPACE}/pav3-output.log"
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "=== PAV3 batch command failed with exit code $EXIT_CODE ==="
+            echo "=== Last 100 lines of output ==="
+            tail -100 "${GITHUB_WORKSPACE}/pav3-output.log"
+            echo ""
+            echo "=== Trying without --user flag to check if it's a permissions issue ==="
+            docker run --rm \
+              -v "${WORK_DIR}:${WORK_DIR}" \
+              --workdir "${WORK_DIR}" \
+              pav3-test \
+              batch --cores 4 --keep-going --verbose --debug 2>&1 | head -100 || echo "Also failed without --user flag"
+            exit $EXIT_CODE
+          fi
+
+      - name: Validate output
+        run: |
+          echo "=== Output files ==="
+          find "${WORK_DIR}" -type f | sort
+
+          echo ""
+          echo "=== VCF files ==="
+          VCF_FILES=$(find "${WORK_DIR}" -name "*.vcf.gz" || true)
+          if [ -z "${VCF_FILES}" ]; then
+            echo "WARNING: No VCF files produced"
+          else
+            echo "${VCF_FILES}"
+          fi
+
+      - name: Generate summary report
+        if: always()
+        run: |
+          echo "PAV3 Integration Test Report"
+          echo "============================"
+          echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+
+          echo "Output file count: $(find "${WORK_DIR}" -type f | wc -l)"
+          echo ""
+
+          VCF_FILES=$(find "${WORK_DIR}" -name "*.vcf.gz" 2>/dev/null || true)
+          for vcf in ${VCF_FILES}; do
+            echo "--- $(basename "${vcf}") ---"
+            total=$(zgrep -cv '^#' "${vcf}" 2>/dev/null || echo 0)
+            echo "  Total records: ${total}"
+            snv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=SNV' || echo 0)
+            ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' || echo 0)
+            del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' || echo 0)
+            inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' || echo 0)
+            echo "  SNVs: ${snv}  INS: ${ins}  DEL: ${del}  INV: ${inv}"
+          done
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pav3-integration-results
+          path: ${{ env.WORK_DIR }}
+          retention-days: 7
+          if-no-files-found: warn

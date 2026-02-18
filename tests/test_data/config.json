@@ -1,0 +1,5 @@
+{
+    "reference": "ref/GRCh38_mini.fa.gz",
+    "samples": "test_data/samples.tsv",
+    "ucsc_ref": "hg38"
+}

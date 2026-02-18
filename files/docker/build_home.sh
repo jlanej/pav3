@@ -11,10 +11,9 @@ EOF
 # Setup default
 mkdir -p /home/default -m 777
 
-# Link .cache to /dev/shm/cache
-mkdir -p /dev/shm/cache
-mkdir -p /dev/shm/config
-mkdir -p /dev/shm/tmp
-
-ln -s /dev/shm/cache /home/default/.cache
-ln -s /dev/shm/config /home/default/.config
+# Create .cache and .config as real directories (not symlinks)
+# Use mode 777 to allow non-root users (when running with --user flag) to write to cache
+# Previously these were symlinks to /dev/shm, but /dev/shm subdirectories don't persist
+# across Docker build and runtime, causing FileNotFoundError with --user flag
+mkdir -p /home/default/.cache -m 777
+mkdir -p /home/default/.config -m 777

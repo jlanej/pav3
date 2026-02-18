@@ -264,7 +264,7 @@ def variant_tables_snv_insdel(
                             pl.struct('qry_pos', 'qry_end')
                             .map_elements(get_ins_seq, return_dtype=pl.String)
                         ).alias('seq'),
-                        pl.col('op_len').map_elements(score_model.gap).alias('var_score'),
+                        pl.col('op_len').map_elements(score_model.gap, return_dtype=pl.Float64).alias('var_score'),
                     )
                 )
 
@@ -279,7 +279,7 @@ def variant_tables_snv_insdel(
                             pl.struct('pos', 'end')
                             .map_elements(lambda coords: seq_ref[coords['pos']:coords['end']], return_dtype=pl.String)
                         ).alias('seq'),
-                        pl.col('op_len').map_elements(score_model.gap).alias('var_score'),
+                        pl.col('op_len').map_elements(score_model.gap, return_dtype=pl.Float64).alias('var_score'),
                     )
                 )
 
