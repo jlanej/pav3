@@ -123,7 +123,7 @@ class ScoreModel(ABC):
 
         :returns: Sum of alignment scores across all operations.
         """
-        return np.sum(np.vectorize(self.score_op)(op_arr[:, 0], op_arr[:, 1]))
+        return float(np.sum(np.vectorize(self.score_op)(op_arr[:, 0], op_arr[:, 1])))
 
     def score_align_table(self, df: pl.DataFrame) -> pl.Series:
         """Score all alignment records in a table.
