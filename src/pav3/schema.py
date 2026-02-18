@@ -50,7 +50,7 @@ VARIANT: dict[str, pl.DataType] = {
     'qry_end': ALIGN['qry_end'],
     'qry_rev': pl.Boolean,
     'call_source': pl.String,
-    'var_score': pl.Float32,
+    'var_score': pl.Float64,
     'outer_ref': pl.Struct({
         'chrom': pl.String,
         'pos': pl.Int64,
