@@ -8,13 +8,11 @@ alias ls='ls -aFh --color=auto'
 alias ll='ls -aFlh --color=auto'
 EOF
 
-# Setup default
-mkdir -p /home/default -m 777
+# Setup default home directory with cache directories
+# Create actual directories instead of symlinks to /dev/shm to ensure
+# compatibility when running as non-root user with --user flag
+mkdir -p /home/default/.cache -m 777
+mkdir -p /home/default/.config -m 777
 
-# Link .cache to /dev/shm/cache
-mkdir -p /dev/shm/cache
-mkdir -p /dev/shm/config
-mkdir -p /dev/shm/tmp
-
-ln -s /dev/shm/cache /home/default/.cache
-ln -s /dev/shm/config /home/default/.config
+# Make /home/default world-writable so any user can write to it
+chmod -R 777 /home/default
