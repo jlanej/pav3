@@ -1,0 +1,18 @@
+# PAV3 Configuration for mini test dataset
+# Generated: 2026-02-18
+
+reference: ref/GRCh38_mini.fa.gz
+
+# Reference coordinate offset (since we extracted a sub-region)
+# This is important for coordinate translation
+reference_offset:
+  chr17: 9958130
+
+samples: samples.tsv
+
+# UCSC reference name for annotations
+ucsc_ref: hg38
+
+# Optional: limit to specific chromosomes
+chromosomes:
+  - chr17
