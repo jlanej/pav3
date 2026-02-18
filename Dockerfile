@@ -65,7 +65,7 @@ RUN python3 -c "import sysconfig, os; \
     site_pkg = sysconfig.get_path('purelib'); \
     score_py = os.path.join(site_pkg, 'pav3', 'align', 'score.py'); \
     assert os.path.exists(score_py), 'File not found: ' + score_py; \
-    with open(score_py) as f: content = f.read(); \
+    content = open(score_py).read(); \
     assert 'return float(np.sum(np.vectorize' in content, 'Float32/Float64 fix not found'; \
     print('✓ Installation verified: code is from local repository')"
 
