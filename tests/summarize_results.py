@@ -31,7 +31,13 @@ from pathlib import Path
 
 
 def read_vcf_records(vcf_path: Path) -> list[dict]:
-    """Read variant records from a VCF file (plain or gzipped)."""
+    """Read variant records from a VCF file (plain or gzipped).
+
+    :param vcf_path: Path to a VCF or VCF.gz file.
+
+    :returns: List of dicts with keys: chrom, pos, id, ref, alt, qual, filter, info.
+        The info value is itself a dict of INFO key-value pairs.
+    """
 
     records = []
     opener = gzip.open if str(vcf_path).endswith('.gz') else open
@@ -95,7 +101,7 @@ def summarize_vcf(vcf_path: Path) -> dict:
 
 
 def find_output_files(output_dir: Path) -> dict:
-    """Categorise output files by extension."""
+    """Categorize output files by extension."""
 
     categories = {
         'vcf': [],
