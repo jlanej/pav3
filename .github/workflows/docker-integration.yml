@@ -63,16 +63,27 @@ jobs:
           cp -r tests/test_data/assemblies "${WORK_DIR}/"
           cp tests/test_data/pav.json "${WORK_DIR}/"
           cp tests/test_data/assemblies.tsv "${WORK_DIR}/"
+          
+          echo "=== Working directory structure ==="
+          ls -la "${WORK_DIR}"
+          echo ""
+          echo "=== Directory permissions ==="
+          stat "${WORK_DIR}"
+          echo ""
+          echo "=== Config files ==="
+          cat "${WORK_DIR}/pav.json"
+          cat "${WORK_DIR}/assemblies.tsv"
 
       - name: Run pav3 batch
         run: |
+          echo "=== Running pav3 batch with verbose output ==="
           docker run --rm \
             -v "${WORK_DIR}:${WORK_DIR}" \
             --user "$(id -u):$(id -g)" \
             --workdir "${WORK_DIR}" \
             -e HOME=/home/default \
             pav3-test \
-            batch --cores 4 --keep-going
+            batch --cores 4 --keep-going --verbose --debug
 
       - name: Validate output
         run: |
