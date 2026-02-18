@@ -844,7 +844,7 @@ def link_fasta(
 
     # Convert source to absolute path to ensure symlinks are resolvable
     source = str(Path(source).resolve())
-    
+
     source_fai = source + '.fai'
     source_gzi = source + '.gzi'
 
