@@ -1,0 +1,163 @@
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# WARNING: This workflow and the resulting Docker images were generated via
+# AI-assisted prompts for TESTING AND DEVELOPMENT PURPOSES ONLY.
+#
+# These images have NOT been fully validated for production use. The Dockerfile,
+# dependency versions, and runtime configuration may contain errors or omissions.
+#
+# DO NOT use these images in production or publish scientific results based on
+# them without thorough validation and review by the PAV3 maintainers.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# This workflow builds and publishes Docker images to GitHub Container Registry.
+#
+# Common pitfalls:
+#   - The Docker build downloads binaries from external sources (UCSC, GitHub)
+#     which may fail if those services are unavailable. Consider pinning versions.
+#   - Build can take 20+ minutes due to compiling samtools, minimap2, and LRA
+#     from source. GitHub Actions runners may time out on slow networks.
+#   - The workflow requires 'packages: write' permission to push to ghcr.io.
+#   - Image tags are based on git refs; ensure your tagging strategy is correct.
+#   - Published images are PUBLIC by default in ghcr.io unless repo is private.
+
+name: Build and Publish Docker Image (AI-Generated - Testing Only)
+
+on:
+  # Manual trigger only - prevents accidental publishes
+  workflow_dispatch:
+    inputs:
+      tag_suffix:
+        description: 'Optional tag suffix (e.g., "-dev", "-test")'
+        required: false
+        default: '-testing'
+  # Optionally enable on releases after validation
+  # release:
+  #   types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-publish:
+    name: Build & Publish Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write  # Required to push to ghcr.io
+
+    steps:
+      - name: Display AI-generation warning
+        run: |
+          echo "╔════════════════════════════════════════════════════════════════╗"
+          echo "║                         ⚠️  WARNING  ⚠️                         ║"
+          echo "║                                                                ║"
+          echo "║  This Docker image was generated via AI-assisted prompts      ║"
+          echo "║  for TESTING AND DEVELOPMENT PURPOSES ONLY.                   ║"
+          echo "║                                                                ║"
+          echo "║  DO NOT USE IN PRODUCTION without thorough validation!        ║"
+          echo "╚════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Image will be tagged: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=false
+            suffix=${{ github.event.inputs.tag_suffix || '-testing' }},onlatest=true
+          tags: |
+            # Git branch name for branch pushes
+            type=ref,event=branch
+            # Git tag for tag pushes
+            type=ref,event=tag
+            # Semver tags for releases
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            # SHA for all events
+            type=sha,format=short
+            # Latest for main branch (disabled above, enable if desired)
+            # type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=PAV3 (AI-Generated Testing Image)
+            org.opencontainers.image.description=Phased Assembly Variant Caller - TESTING/DEVELOPMENT ONLY - Generated via AI prompts
+            org.opencontainers.image.vendor=JAX Computational Sciences
+            ai.generated=true
+            ai.purpose=testing
+            ai.warning=This image was generated via AI assistance and has not been fully validated. Use at your own risk.
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Build both stages
+          target: pav3
+
+      - name: Generate image digest
+        id: digest
+        run: |
+          echo "Image published successfully!"
+          echo ""
+          echo "Tags created:"
+          echo "${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "⚠️  REMINDER: This is an AI-generated testing image."
+          echo "   Validate thoroughly before using for scientific analysis."
+
+      - name: Create image manifest summary
+        run: |
+          # Extract the first tag from the metadata output for examples
+          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🐳 Docker Image Published
+
+          **⚠️ AI-GENERATED IMAGE - TESTING ONLY ⚠️**
+
+          This image was created via AI-assisted prompts and has not been fully validated.
+          **DO NOT use for production or scientific publication without thorough review.**
+
+          ### Published Tags
+          \`\`\`
+          ${{ steps.meta.outputs.tags }}
+          \`\`\`
+
+          ### Pull Command
+          \`\`\`bash
+          docker pull ${FIRST_TAG}
+          \`\`\`
+
+          ### Run Command Example
+          \`\`\`bash
+          docker run --rm ${FIRST_TAG} --version
+          \`\`\`
+
+          ### Labels Applied
+          - \`ai.generated=true\`
+          - \`ai.purpose=testing\`
+          - \`ai.warning=Use at your own risk\`
+
+          ---
+          **Image Maintainer Note:** Review and validate this image before recommending to users.
+          EOF
