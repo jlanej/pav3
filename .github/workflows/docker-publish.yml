@@ -91,7 +91,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             # SHA for all events
-            type=sha,prefix={{branch}}-,format=short
+            type=sha,format=short
             # Latest for main branch (disabled above, enable if desired)
             # type=raw,value=latest,enable={{is_default_branch}}
           labels: |
@@ -120,7 +120,7 @@ jobs:
           echo "Image published successfully!"
           echo ""
           echo "Tags created:"
-          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
+          echo "${{ steps.meta.outputs.tags }}"
           echo ""
           echo "⚠️  REMINDER: This is an AI-generated testing image."
           echo "   Validate thoroughly before using for scientific analysis."
