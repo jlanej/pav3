@@ -162,6 +162,13 @@ def get_ref_trace(
         )
         .drop(['_index_aligned', '_index_trace'])
 
+        # Adjust anchor-only segments at the edges to include only segments that are a single fwd copy
+        .with_columns(
+            (pl.col('_all_anchor') & (
+                (pl.col('fwd_count') == 1) & (pl.col('rev_count') == 0)
+            )).alias('_all_anchor')
+        )
+
         # Drop anchor-only segments at the edges
         .filter(
             ~pl.col('_all_anchor') | (
