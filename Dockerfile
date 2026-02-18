@@ -61,9 +61,11 @@ RUN pip3 install --no-cache-dir .
 
 # Verify the installation is from local source by checking for a known fix
 # The score_op_arr method should return float (not numpy float64)
-RUN python3 -c "import inspect; from pav3.align.score import ScoreModel; \
-    src = inspect.getsource(ScoreModel.score_op_arr); \
-    assert 'return float(' in src, 'Installation verification failed: expected Float32/Float64 fix not found'; \
+RUN python3 -c "import sys, os; \
+    site_pkg = [p for p in sys.path if 'site-packages' in p][0]; \
+    score_py = os.path.join(site_pkg, 'pav3', 'align', 'score.py'); \
+    content = open(score_py).read(); \
+    assert 'return float(np.sum(np.vectorize' in content, 'Float32/Float64 fix not found'; \
     print('✓ Installation verified: code is from local repository')"
 
 # Setup home directory for runtime
