@@ -66,6 +66,17 @@ RUN LOCAL_VERSION=$(grep -m1 '^__version__' src/pav3/__init__.py | cut -d"'" -f2
     fi && \
     echo "✓ Version verified: $INSTALLED_VERSION (matches local source)"
 
+# Patch agglovar's Float32 map_elements calls to use Float64.
+# Polars >= 1.38 rejects Python float (Float64) values when return_dtype=pl.Float32
+# is used in map_elements. agglovar's overlap join code triggers this during variant
+# merging. This patch changes the two map_elements return_dtype declarations and
+# their corresponding null-literal casts from Float32 to Float64.
+RUN AGGLOVAR_OVERLAP=$(python3 -c "import agglovar.pairwise.overlap._overlap as m; print(m.__file__)") && \
+    sed -i 's/return_dtype=pl\.Float32/return_dtype=pl.Float64/g' "$AGGLOVAR_OVERLAP" && \
+    sed -i 's/pl\.lit(None)\.cast(pl\.Float32)/pl.lit(None).cast(pl.Float64)/g' "$AGGLOVAR_OVERLAP" && \
+    find "$(dirname "$AGGLOVAR_OVERLAP")/__pycache__" -name "*.pyc" -delete 2>/dev/null || true && \
+    python3 -c "import importlib; import agglovar.pairwise.overlap._overlap as m; importlib.reload(m); print('✓ Patched agglovar overlap: Float32 -> Float64 in map_elements')"
+
 # Verify the installation works by exercising the scoring code path.
 # This catches Float32/Float64 type mismatches in map_elements calls.
 RUN python3 -c "\
