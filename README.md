@@ -6,6 +6,9 @@
 
 Variant caller for assembled genomes.
 
+Please discuss with authors prior to publishing results using PAV 3. A paper describing PAV 3 is in
+preparation and is expected mid-2026.
+
 ## Development release (Please read)
 
 PAV 3 is currently a development release and may contain bugs. Please report problems you encounter.
