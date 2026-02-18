@@ -76,3 +76,6 @@ This makes it clear that:
 - **Index files**: The `.fai` and `.gzi` index files must stay in sync with their
   corresponding `.fa.gz` files. If you regenerate the FASTA, re-index with
   `samtools faidx`.
+- **Docker non-root user**: When running the Docker container with `--user` (non-root),
+  you must set the HOME environment variable: `-e HOME=/home/default`. Without this,
+  Snakemake will try to write cache files to `/.cache` and fail with a permission error.

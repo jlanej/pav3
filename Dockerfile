@@ -58,6 +58,9 @@ RUN pip3 install --no-cache-dir ${PAV_BASE}
 RUN files/docker/build_home.sh
 
 # Runtime environment
+# NOTE: When running as a non-root user with --user, set -e HOME=/home/default
+# to allow Snakemake to write cache files. Without this, Snakemake will attempt
+# to write to /.cache and fail with a permission error.
 ENV PATH="${PATH}:${PAV_BASE}/bin"
 
 ENTRYPOINT ["pav3"]
