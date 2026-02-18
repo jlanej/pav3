@@ -33,6 +33,8 @@ test_data/
 
 ## Running the Integration Test
 
+### With Docker
+
 From the repository root:
 ```bash
 tests/test_docker_integration.sh
@@ -40,6 +42,23 @@ tests/test_docker_integration.sh
 
 This builds the Docker image, runs pav3 on this test data, and validates output.
 Use `--keep` to preserve the working directory for inspection.
+
+### With Apptainer on HPC
+
+```bash
+# Build the Apptainer image from the Dockerfile
+apptainer build pav3.sif Dockerfile
+
+# Run the test
+cd tests/test_data
+apptainer exec \
+  --bind $(pwd):$(pwd) \
+  --pwd $(pwd) \
+  ../../pav3.sif \
+  pav3 batch --cores 4 --keep-going
+```
+
+For more examples and HPC-specific guidance, see the "Running with Apptainer/Singularity on HPC" section in the main README.
 
 To summarize results from a completed run:
 ```bash

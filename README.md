@@ -52,6 +52,112 @@ Currently, PAV needs `minimap2` in the environment where it is run. This may cha
 dependencies are handled by the installer.
 
 
+### Running with Apptainer/Singularity on HPC
+
+For HPC environments that use Apptainer (formerly Singularity) instead of Docker, you can convert the PAV3 Docker image to an Apptainer SIF image.
+
+#### Building the Apptainer image
+
+```bash
+# Option 1: Build directly from the Docker image in this repository
+apptainer build pav3.sif docker-daemon://pav3-test:latest
+
+# Option 2: Build from a published image (once available and validated)
+# apptainer build pav3.sif docker://ghcr.io/jlanej/pav3:main-testing
+
+# Option 3: Build from the Dockerfile directly
+apptainer build pav3.sif Dockerfile
+```
+
+#### Running PAV3 with Apptainer
+
+Apptainer automatically binds your home directory and current working directory. For PAV3, you'll need to ensure your data directories are accessible inside the container:
+
+```bash
+# Basic usage - run from directory containing pav.json and assemblies.tsv
+apptainer exec pav3.sif pav3 batch --cores 8
+
+# With explicit bind mounts for data in different locations
+apptainer exec \
+  --bind /scratch/user/reference:/reference:ro \
+  --bind /scratch/user/assemblies:/assemblies:ro \
+  --bind /scratch/user/pav_output:/output:rw \
+  --pwd /output \
+  pav3.sif \
+  pav3 batch --cores 8
+
+# Using environment variables for configuration
+apptainer exec \
+  --env HOME=/scratch/user/pav_run \
+  --bind /scratch/user/pav_run:/scratch/user/pav_run \
+  pav3.sif \
+  pav3 batch --cores 16 --keep-going
+```
+
+#### HPC cluster job example (SLURM)
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=pav3
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
+#SBATCH --time=24:00:00
+#SBATCH --output=pav3_%j.log
+
+# Set up working directory
+WORK_DIR=/scratch/$USER/pav3_run_${SLURM_JOB_ID}
+mkdir -p ${WORK_DIR}
+cd ${WORK_DIR}
+
+# Copy or link configuration files
+cp /path/to/pav.json .
+cp /path/to/assemblies.tsv .
+
+# Run PAV3 with Apptainer
+apptainer exec \
+  --bind /scratch/$USER:/scratch/$USER \
+  --bind /reference/data:/reference/data:ro \
+  --pwd ${WORK_DIR} \
+  /path/to/pav3.sif \
+  pav3 batch --cores ${SLURM_CPUS_PER_TASK} --keep-going
+
+# Check results
+ls -lh results/*/call/*.vcf.gz
+```
+
+#### Important notes for HPC usage
+
+- **Memory requirements**: PAV3 uses Polars for data processing. Ensure you allocate sufficient memory (64+ GB recommended for whole-genome assemblies).
+- **Temporary space**: PAV3 creates temporary files during alignment and processing. Ensure `/tmp` or `$TMPDIR` has adequate space, or set `TMPDIR` to a scratch directory with more space.
+- **Bind mounts**: Apptainer needs explicit bind mounts for paths outside your home directory. Use `--bind` to make reference genomes, assemblies, and output directories accessible.
+- **Cache directory**: Snakemake (used by PAV3) creates cache files. If running as a non-root user, ensure the HOME environment or cache directory is writable. The PAV3 Docker image includes `/home/default` for this purpose.
+- **Testing**: Always test your Apptainer setup with a small dataset first (e.g., the test data in `tests/test_data/`) before running on full genomes.
+
+#### Troubleshooting
+
+**Error: "File not found" for reference or assembly files**
+- Check that paths in `pav.json` and `assemblies.tsv` are accessible inside the container
+- Add necessary bind mounts with `--bind` flag
+- Use absolute paths in configuration files when possible
+
+**Error: "Permission denied" writing to output directories**
+- Ensure output directories exist and are writable before running
+- Use `--bind /path/to/output:/path/to/output:rw` to explicitly make directories writable
+- Check that the bind mount paths are correct (paths must exist on the host)
+
+**Out of memory errors**
+- Increase `--mem` in your SLURM job or reduce `--cores` to lower parallel processing
+- Polars memory usage scales with variant density and genome size
+- Consider processing samples one at a time if memory is constrained
+
+**Slow I/O performance**
+- Use local scratch space (not NFS/shared filesystems) for temporary files
+- Set `TMPDIR` to a local, high-performance filesystem
+- Keep reference genomes on fast storage or copy to local disk before running
+
+
 ### Output
 PAV will output a VCF file for each sample called `NAME.vcf.gz`.
 
