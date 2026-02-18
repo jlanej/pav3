@@ -48,11 +48,23 @@ WORKDIR ${PAV_BASE}
 COPY --from=build_deps ${PAV_BASE} ${PAV_BASE}
 
 # Copy project source and install pav3
+# Install directly from the local source code in this repository
+# This ensures we use the exact code version being built, not any cached
+# or PyPI version
 COPY pyproject.toml uv.lock README.md LICENSE ${PAV_BASE}/
 COPY src/ ${PAV_BASE}/src/
 COPY files/ ${PAV_BASE}/files/
 
-RUN pip3 install --no-cache-dir ${PAV_BASE}
+# Install from local source (not PyPI)
+# Using "." ensures pip installs from the current directory (${PAV_BASE})
+RUN pip3 install --no-cache-dir .
+
+# Verify the installation is from local source by checking for a known fix
+# The score_op_arr method should return float (not numpy float64)
+RUN python3 -c "import inspect; from pav3.align.score import ScoreModel; \
+    src = inspect.getsource(ScoreModel.score_op_arr); \
+    assert 'return float(' in src, 'Installation verification failed: expected Float32/Float64 fix not found'; \
+    print('✓ Installation verified: code is from local repository')"
 
 # Setup home directory for runtime
 RUN files/docker/build_home.sh
