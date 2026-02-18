@@ -57,17 +57,27 @@ COPY files/ ${PAV_BASE}/files/
 
 # Install from local source (not PyPI)
 # Using "." ensures pip installs from the current directory (${PAV_BASE})
-RUN pip3 install --no-cache-dir .
+RUN LOCAL_VERSION=$(grep -m1 '^__version__' src/pav3/__init__.py | cut -d"'" -f2) && \
+    pip3 install --no-cache-dir . && \
+    INSTALLED_VERSION=$(python3 -c "import pav3; print(pav3.__version__)") && \
+    if [ "$LOCAL_VERSION" != "$INSTALLED_VERSION" ]; then \
+        echo "ERROR: version mismatch - local=$LOCAL_VERSION installed=$INSTALLED_VERSION" >&2; \
+        exit 1; \
+    fi && \
+    echo "✓ Version verified: $INSTALLED_VERSION (matches local source)"
 
-# Verify the installation is from local source by checking for a known fix
-# The score_op_arr method should return float (not numpy float64)
-RUN python3 -c "import sysconfig, os; \
-    site_pkg = sysconfig.get_path('purelib'); \
-    score_py = os.path.join(site_pkg, 'pav3', 'align', 'score.py'); \
-    assert os.path.exists(score_py), 'File not found: ' + score_py; \
-    content = open(score_py).read(); \
-    assert 'return float(np.sum(np.vectorize' in content, 'Float32/Float64 fix not found'; \
-    print('✓ Installation verified: code is from local repository')"
+# Verify the installation works by exercising the scoring code path.
+# This catches Float32/Float64 type mismatches in map_elements calls.
+RUN python3 -c "\
+import polars as pl; \
+import numpy as np; \
+from pav3.align.score import get_score_model; \
+model = get_score_model(None); \
+ops = pl.DataFrame({'align_ops': [{'op_code': [7, 8], 'op_len': [1000, 5]}]}); \
+result = model.score_align_table(ops); \
+assert result.dtype == pl.Float64, f'Unexpected dtype: {result.dtype}'; \
+assert len(result) == 1 and result[0] is not None; \
+print('✓ Installation verified: scoring code path works correctly')"
 
 # Setup home directory for runtime
 RUN files/docker/build_home.sh
