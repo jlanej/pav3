@@ -1,8 +1,8 @@
 #
-# Stage: build
+# Stage: build binary dependencies
 #
 
-FROM python:3.11.0-bullseye AS build_deps
+FROM python:3.12-bookworm AS build_deps
 LABEL pav_stage=build_deps
 
 ENV PAV_BASE=/opt/pav
@@ -17,64 +17,33 @@ RUN rm -rf files
 
 
 #
-# Stage: stage pav files
+# Stage: pav3
 #
 
-FROM python:3.11.0-bullseye AS stage_pav
-LABEL pav_stage=stage_pav
+FROM python:3.12-bookworm AS pav3
+LABEL pav_stage=pav3
 
-ENV PAV_BASE=/opt/pav
-
-WORKDIR ${PAV_BASE}
-
-
-# Copy PAV files into the container
-COPY files/ ${PAV_BASE}/files/
-COPY scripts/ ${PAV_BASE}/scripts/
-COPY dep/ ${PAV_BASE}/dep/
-COPY pavlib/ ${PAV_BASE}/pavlib/
-COPY rules/ ${PAV_BASE}/rules/
-COPY Snakefile Dockerfile *.md ${PAV_BASE}/
-
-
-#
-# Stage: pav
-#
-
-FROM python:3.11.0-bullseye AS pav
-LABEL pav_stage=pav
-
-ENV PAV_VERSION="2.4.6"
 ENV PAV_BASE=/opt/pav
 
 LABEL org.jax.becklab.author="Peter Audano<peter.audano@jax.org>"
-LABEL org.jax.becklab.name="PAV"
-LABEL org.jax.becklab.version="${PAV_VERSION}"
+LABEL org.jax.becklab.name="PAV3"
 
 WORKDIR ${PAV_BASE}
 
-# Base python and snakemake
-RUN pip3 install \
-    biopython \
-    intervaltree \
-    matplotlib \
-    matplotlib-venn \
-    numpy \
-    pandas \
-    pysam \
-    scipy \
-    snakemake \
-    pulp \
-    drmaa \
-    joblib
-
-# Copy from build
+# Copy binary dependencies from build stage
 COPY --from=build_deps ${PAV_BASE} ${PAV_BASE}
-COPY --from=stage_pav ${PAV_BASE} ${PAV_BASE}
 
+# Copy project source and install pav3
+COPY pyproject.toml uv.lock README.md LICENSE ${PAV_BASE}/
+COPY src/ ${PAV_BASE}/src/
+COPY files/ ${PAV_BASE}/files/
+
+RUN pip3 install --no-cache-dir ${PAV_BASE}
+
+# Setup home directory for runtime
 RUN files/docker/build_home.sh
 
 # Runtime environment
 ENV PATH="${PATH}:${PAV_BASE}/bin"
 
-ENTRYPOINT ["/opt/pav/files/docker/run"]
+ENTRYPOINT ["pav3"]

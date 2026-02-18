@@ -18,10 +18,27 @@ test_data/
 │   └── NA19240/
 │       ├── mat.fa.gz          # Maternal contigs overlapping target
 │       └── pat.fa.gz          # Paternal contigs overlapping target
-├── samples.tsv                # Sample manifest
-├── config.json                # PAV3 config (JSON format)
-├── config.yaml                # PAV3 config (YAML format)
+├── pav.json                   # PAV3 config (required by pav3)
+├── assemblies.tsv             # Assembly table (required by pav3)
+├── samples.tsv                # Sample manifest (legacy format)
+├── config.json                # Legacy config (JSON format)
+├── config.yaml                # Legacy config (YAML format)
 └── README.md                  # This file
+```
+
+## Running the Integration Test
+
+From the repository root:
+```bash
+tests/test_docker_integration.sh
+```
+
+This builds the Docker image, runs pav3 on this test data, and validates output.
+Use `--keep` to preserve the working directory for inspection.
+
+To summarize results from a completed run:
+```bash
+python tests/summarize_results.py <output_dir>
 ```
 
 ## Reference Coordinates
