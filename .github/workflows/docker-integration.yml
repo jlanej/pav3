@@ -12,6 +12,8 @@
 #     but the first run on a fresh runner will be slow.
 #   - If the test data FASTA files change, their .fai/.gzi index files must be
 #     regenerated. A mismatch will cause samtools/pysam errors inside the container.
+#   - The container must be run with HOME=/home/default to allow Snakemake to
+#     write cache files when running as a non-root user.
 
 name: Docker Integration Test
 
@@ -68,6 +70,7 @@ jobs:
             -v "${WORK_DIR}:${WORK_DIR}" \
             --user "$(id -u):$(id -g)" \
             --workdir "${WORK_DIR}" \
+            -e HOME=/home/default \
             pav3-test \
             batch --cores 4 --keep-going
 
