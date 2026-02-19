@@ -20,20 +20,8 @@ name: Docker Integration Test
 on:
   push:
     branches: [main, dev]
-    paths:
-      - 'Dockerfile'
-      - 'files/docker/**'
-      - 'src/**'
-      - 'pyproject.toml'
-      - 'tests/**'
   pull_request:
     branches: [main]
-    paths:
-      - 'Dockerfile'
-      - 'files/docker/**'
-      - 'src/**'
-      - 'pyproject.toml'
-      - 'tests/**'
   workflow_dispatch:
 
 jobs:

@@ -25,18 +25,8 @@ name: Build and Publish Docker Image (AI-Generated - Testing Only)
 on:
   push:
     branches: [main]
-    paths:
-      - 'Dockerfile'
-      - 'files/docker/**'
-      - 'src/**'
-      - 'pyproject.toml'
   pull_request:
     branches: [main]
-    paths:
-      - 'Dockerfile'
-      - 'files/docker/**'
-      - 'src/**'
-      - 'pyproject.toml'
   workflow_dispatch:
     inputs:
       tag_suffix:
