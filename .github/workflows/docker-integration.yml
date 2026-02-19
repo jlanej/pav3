@@ -144,25 +144,43 @@ jobs:
       - name: Generate summary report
         if: always()
         run: |
+          FILE_COUNT=$(find "${WORK_DIR}" -type f | wc -l)
+          VCF_FILES=$(find "${WORK_DIR}" -name "*.vcf.gz" 2>/dev/null || true)
+
           echo "PAV3 Integration Test Report"
           echo "============================"
           echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Output file count: ${FILE_COUNT}"
           echo ""
 
-          echo "Output file count: $(find "${WORK_DIR}" -type f | wc -l)"
-          echo ""
-
-          VCF_FILES=$(find "${WORK_DIR}" -name "*.vcf.gz" 2>/dev/null || true)
-          for vcf in ${VCF_FILES}; do
-            echo "--- $(basename "${vcf}") ---"
-            total=$(zgrep -cv '^#' "${vcf}" 2>/dev/null || echo 0)
-            echo "  Total records: ${total}"
-            snv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=SNV' || echo 0)
-            ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' || echo 0)
-            del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' || echo 0)
-            inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' || echo 0)
-            echo "  SNVs: ${snv}  INS: ${ins}  DEL: ${del}  INV: ${inv}"
-          done
+          # Write GitHub Step Summary for easy access to results
+          {
+            echo "## 🧬 PAV3 Integration Test Results"
+            echo ""
+            echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "**Output file count:** ${FILE_COUNT}"
+            echo ""
+            echo "### Variant Counts"
+            echo ""
+            echo "| VCF File | Total | SNV | INS | DEL | INV |"
+            echo "|----------|-------|-----|-----|-----|-----|"
+            for vcf in ${VCF_FILES}; do
+              total=$(zgrep -cv '^#' "${vcf}" 2>/dev/null || echo 0)
+              snv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=SNV' || echo 0)
+              ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' || echo 0)
+              del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' || echo 0)
+              inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' || echo 0)
+              echo "| $(basename "${vcf}") | ${total} | ${snv} | ${ins} | ${del} | ${inv} |"
+            done
+            echo ""
+            echo "### 📥 Download Results"
+            echo ""
+            echo "The full pipeline output (VCFs, logs, intermediate files) is available as a downloadable artifact:"
+            echo "1. Go to the **Actions** tab"
+            echo "2. Click this workflow run"
+            echo "3. Scroll to **Artifacts** at the bottom"
+            echo "4. Download **pav3-integration-results** (pipeline output) or **pav3-pipeline-log** (batch log)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload results
         if: always()
@@ -170,5 +188,14 @@ jobs:
         with:
           name: pav3-integration-results
           path: ${{ env.WORK_DIR }}
-          retention-days: 7
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload pipeline log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pav3-pipeline-log
+          path: ${{ github.workspace }}/pav3-output.log
+          retention-days: 14
           if-no-files-found: warn

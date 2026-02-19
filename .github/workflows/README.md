@@ -29,7 +29,7 @@ The images have **NOT** been fully validated for production use. The Dockerfile,
 
 **Features:**
 - Builds and publishes Docker images to GitHub Container Registry (ghcr.io)
-- Manual trigger only (workflow_dispatch) to prevent accidental publishes
+- Triggers on push to main branch and manual dispatch (workflow_dispatch)
 - Tags images with `-testing` suffix by default
 - Includes AI-generation warnings in image labels and metadata
 

@@ -23,7 +23,13 @@
 name: Build and Publish Docker Image (AI-Generated - Testing Only)
 
 on:
-  # Manual trigger only - prevents accidental publishes
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'files/docker/**'
+      - 'src/**'
+      - 'pyproject.toml'
   workflow_dispatch:
     inputs:
       tag_suffix:
