@@ -201,11 +201,13 @@ REPORT="${WORK_DIR}/integration_test_report.txt"
             indel_ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' 2>/dev/null || echo 0)
             indel_del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' 2>/dev/null || echo 0)
             inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' 2>/dev/null || echo 0)
+            cpx=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=CPX' 2>/dev/null || echo 0)
 
             echo "  SNVs:       ${snv}"
             echo "  Insertions: ${indel_ins}"
             echo "  Deletions:  ${indel_del}"
             echo "  Inversions: ${inv}"
+            echo "  Complex:    ${cpx}"
         done
     fi
 

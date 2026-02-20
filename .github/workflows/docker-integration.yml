@@ -150,15 +150,16 @@ jobs:
             echo ""
             echo "### Variant Counts"
             echo ""
-            echo "| VCF File | Total | SNV | INS | DEL | INV |"
-            echo "|----------|-------|-----|-----|-----|-----|"
+            echo "| VCF File | Total | SNV | INS | DEL | INV | CPX |"
+            echo "|----------|-------|-----|-----|-----|-----|-----|"
             for vcf in ${VCF_FILES}; do
               total=$(zgrep -cv '^#' "${vcf}" 2>/dev/null || echo 0)
               snv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=SNV' || echo 0)
               ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' || echo 0)
               del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' || echo 0)
               inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' || echo 0)
-              echo "| $(basename "${vcf}") | ${total} | ${snv} | ${ins} | ${del} | ${inv} |"
+              cpx=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=CPX' || echo 0)
+              echo "| $(basename "${vcf}") | ${total} | ${snv} | ${ins} | ${del} | ${inv} | ${cpx} |"
             done
             echo ""
             echo "### 📥 Download Results"
