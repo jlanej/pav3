@@ -77,6 +77,15 @@ RUN AGGLOVAR_OVERLAP=$(python3 -c "import agglovar.pairwise.overlap._overlap as 
     find "$(dirname "$AGGLOVAR_OVERLAP")/__pycache__" -name "*.pyc" -delete 2>/dev/null || true && \
     python3 -c "import importlib; import agglovar.pairwise.overlap._overlap as m; importlib.reload(m); print('✓ Patched agglovar overlap: Float32 -> Float64 in map_elements')"
 
+# Patch agglovar's seqmatch.py to return float instead of int in match_prop().
+# When sequences are shorter than jaccard_kmer, match_prop returns 1 or 0 (int),
+# which Polars >= 1.38 rejects when building a Float64 Series via map_elements.
+# This patch changes "return 1 if ... else 0" to "return 1.0 if ... else 0.0".
+RUN AGGLOVAR_SEQMATCH=$(python3 -c "import agglovar.seqmatch as m; print(m.__file__)") && \
+    sed -i 's/return 1 if seq_a\.upper() == seq_b\.upper() else 0$/return 1.0 if seq_a.upper() == seq_b.upper() else 0.0/' "$AGGLOVAR_SEQMATCH" && \
+    find "$(dirname "$AGGLOVAR_SEQMATCH")/__pycache__" -name "*.pyc" -delete 2>/dev/null || true && \
+    python3 -c "import importlib; import agglovar.seqmatch as m; importlib.reload(m); print('✓ Patched agglovar seqmatch: int -> float in match_prop()')"
+
 # Verify the installation works by exercising the scoring code path.
 # This catches Float32/Float64 type mismatches in map_elements calls.
 RUN python3 -c "\
@@ -89,6 +98,17 @@ result = model.score_align_table(ops); \
 assert result.dtype == pl.Float64, f'Unexpected dtype: {result.dtype}'; \
 assert len(result) == 1 and result[0] is not None; \
 print('✓ Installation verified: scoring code path works correctly')"
+
+# Verify the seqmatch patch: match_prop must return float, not int.
+# This catches the Int64/Float64 mismatch in map_elements calls.
+RUN python3 -c "\
+from agglovar.seqmatch import MatchScoreModel; \
+m = MatchScoreModel(); \
+r = m.match_prop('A', 'A'); \
+assert isinstance(r, float), f'match_prop returned {type(r).__name__}, expected float'; \
+r = m.match_prop('A', 'T'); \
+assert isinstance(r, float), f'match_prop returned {type(r).__name__}, expected float'; \
+print('✓ Seqmatch verified: match_prop returns float')"
 
 # Setup home directory for runtime
 RUN files/docker/build_home.sh

@@ -222,7 +222,7 @@ rule align_map:
     output:
         sam=temp('temp/{asm_name}/align/trim-none/align_qry_{hap}.sam.gz')
     benchmark: 'log/benchmark/{asm_name}/align_map_{hap}.tsv'
-    threads: 4
+    threads: POLARS_MAX_THREADS
     run:
 
         pav_params = pav3.params.PavParams(wildcards.asm_name, PAV_CONFIG, ASM_TABLE)

@@ -7,7 +7,7 @@ import pav3
 global shell
 global workflow
 
-POLARS_MAX_THREADS = 4
+POLARS_MAX_THREADS = min(workflow.cores, 8)
 
 os.environ['POLARS_MAX_THREADS'] = str(POLARS_MAX_THREADS)
 
