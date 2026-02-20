@@ -215,21 +215,22 @@ REPORT="${WORK_DIR}/integration_test_report.txt"
     echo "Expected Variants"
     echo "-----------------"
 
-    # Check for expected CPX variant — must match .github/workflows/docker-integration.yml
-    EXPECTED_CPX_ID="chr17:9958130-12017414-1028973-CPX-406"
+    # Check for expected CPX variant by sequence — must match .github/workflows/docker-integration.yml
+    # Coordinates and IDs may not be stable, so we check for the sequence instead.
+    EXPECTED_CPX_SEQ="TGAAGTCACATTCTGAGGTACTGGGGGTTACAACTTAACAAATGGATAACATATGAGTTTTCTGAAAGGACACAATTCAAGTCATAACAGTATAAGAACATGGGAATATACTATGATGTTAGGTTCAAATAACAGGAAAAAAGTTGCACAATGAAAGGACCCTAAATATGAGACACGAAATATATCTGATGCATATATTAGTATTAGTATATATTATGAGATATTTGTATATAAATAATTAGATATTACATAAAATATATATTATATAAAATATATTATATTGTATAATTTTTAAATAAGGCTACTTTTTCAATGTCTTACTAGTTTTTTCACAATGAATATATGTTATTCTTACAGAGACCAAAGTGCTGTTTTTAACAAATTGTTGCACTCTCTCTGTTTCTCT"
     CPX_FOUND=false
 
     for vcf in ${VCF_FILES}; do
-        if zgrep -q "${EXPECTED_CPX_ID}" "${vcf}" 2>/dev/null; then
+        if zgrep -q "${EXPECTED_CPX_SEQ}" "${vcf}" 2>/dev/null; then
             CPX_FOUND=true
             break
         fi
     done
 
     if [[ "${CPX_FOUND}" == "true" ]]; then
-        echo "  ✓ ${EXPECTED_CPX_ID}"
+        echo "  ✓ Expected CPX sequence found"
     else
-        echo "  ✗ ${EXPECTED_CPX_ID} (NOT FOUND)"
+        echo "  ✗ Expected CPX sequence (NOT FOUND)"
         PASS=false
     fi
 

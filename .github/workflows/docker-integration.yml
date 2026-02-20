@@ -131,20 +131,21 @@ jobs:
 
           echo ""
           echo "=== Expected Variants ==="
-          # Expected variant ID - must match tests/test_docker_integration.sh
-          EXPECTED_CPX_ID="chr17:9958130-12017414-1028973-CPX-406"
+          # Expected variant sequence — must match tests/test_docker_integration.sh
+          # Coordinates and IDs may not be stable, so we check for the sequence instead.
+          EXPECTED_CPX_SEQ="TGAAGTCACATTCTGAGGTACTGGGGGTTACAACTTAACAAATGGATAACATATGAGTTTTCTGAAAGGACACAATTCAAGTCATAACAGTATAAGAACATGGGAATATACTATGATGTTAGGTTCAAATAACAGGAAAAAAGTTGCACAATGAAAGGACCCTAAATATGAGACACGAAATATATCTGATGCATATATTAGTATTAGTATATATTATGAGATATTTGTATATAAATAATTAGATATTACATAAAATATATATTATATAAAATATATTATATTGTATAATTTTTAAATAAGGCTACTTTTTCAATGTCTTACTAGTTTTTTCACAATGAATATATGTTATTCTTACAGAGACCAAAGTGCTGTTTTTAACAAATTGTTGCACTCTCTCTGTTTCTCT"
           CPX_FOUND=false
 
           for vcf in ${VCF_FILES}; do
-            if zgrep -q "${EXPECTED_CPX_ID}" "${vcf}" 2>/dev/null; then
+            if zgrep -q "${EXPECTED_CPX_SEQ}" "${vcf}" 2>/dev/null; then
               CPX_FOUND=true
-              echo "✓ Found expected CPX variant: ${EXPECTED_CPX_ID}"
+              echo "✓ Found expected CPX variant sequence"
               break
             fi
           done
 
           if [ "${CPX_FOUND}" = "false" ]; then
-            echo "✗ Expected CPX variant NOT FOUND: ${EXPECTED_CPX_ID}"
+            echo "✗ Expected CPX variant sequence NOT FOUND"
             exit 1
           fi
 
