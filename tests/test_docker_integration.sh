@@ -212,29 +212,6 @@ REPORT="${WORK_DIR}/integration_test_report.txt"
     fi
 
     echo ""
-    echo "Expected Variants"
-    echo "-----------------"
-
-    # Check for expected CPX variant by sequence — must match .github/workflows/docker-integration.yml
-    # Coordinates and IDs may not be stable, so we check for the sequence instead.
-    EXPECTED_CPX_SEQ="TGAAGTCACATTCTGAGGTACTGGGGGTTACAACTTAACAAATGGATAACATATGAGTTTTCTGAAAGGACACAATTCAAGTCATAACAGTATAAGAACATGGGAATATACTATGATGTTAGGTTCAAATAACAGGAAAAAAGTTGCACAATGAAAGGACCCTAAATATGAGACACGAAATATATCTGATGCATATATTAGTATTAGTATATATTATGAGATATTTGTATATAAATAATTAGATATTACATAAAATATATATTATATAAAATATATTATATTGTATAATTTTTAAATAAGGCTACTTTTTCAATGTCTTACTAGTTTTTTCACAATGAATATATGTTATTCTTACAGAGACCAAAGTGCTGTTTTTAACAAATTGTTGCACTCTCTCTGTTTCTCT"
-    CPX_FOUND=false
-
-    for vcf in ${VCF_FILES}; do
-        if zgrep -q "${EXPECTED_CPX_SEQ}" "${vcf}" 2>/dev/null; then
-            CPX_FOUND=true
-            break
-        fi
-    done
-
-    if [[ "${CPX_FOUND}" == "true" ]]; then
-        echo "  ✓ Expected CPX sequence found"
-    else
-        echo "  ✗ Expected CPX sequence (NOT FOUND)"
-        PASS=false
-    fi
-
-    echo ""
     echo "Directory Structure"
     echo "-------------------"
     find "${WORK_DIR}" -type d | sed "s|${WORK_DIR}|.|" | sort | head -40

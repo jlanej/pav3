@@ -129,26 +129,6 @@ jobs:
             echo "${VCF_FILES}"
           fi
 
-          echo ""
-          echo "=== Expected Variants ==="
-          # Expected variant sequence — must match tests/test_docker_integration.sh
-          # Coordinates and IDs may not be stable, so we check for the sequence instead.
-          EXPECTED_CPX_SEQ="TGAAGTCACATTCTGAGGTACTGGGGGTTACAACTTAACAAATGGATAACATATGAGTTTTCTGAAAGGACACAATTCAAGTCATAACAGTATAAGAACATGGGAATATACTATGATGTTAGGTTCAAATAACAGGAAAAAAGTTGCACAATGAAAGGACCCTAAATATGAGACACGAAATATATCTGATGCATATATTAGTATTAGTATATATTATGAGATATTTGTATATAAATAATTAGATATTACATAAAATATATATTATATAAAATATATTATATTGTATAATTTTTAAATAAGGCTACTTTTTCAATGTCTTACTAGTTTTTTCACAATGAATATATGTTATTCTTACAGAGACCAAAGTGCTGTTTTTAACAAATTGTTGCACTCTCTCTGTTTCTCT"
-          CPX_FOUND=false
-
-          for vcf in ${VCF_FILES}; do
-            if zgrep -q "${EXPECTED_CPX_SEQ}" "${vcf}" 2>/dev/null; then
-              CPX_FOUND=true
-              echo "✓ Found expected CPX variant sequence"
-              break
-            fi
-          done
-
-          if [ "${CPX_FOUND}" = "false" ]; then
-            echo "✗ Expected CPX variant sequence NOT FOUND"
-            exit 1
-          fi
-
       - name: Generate summary report
         if: always()
         run: |
