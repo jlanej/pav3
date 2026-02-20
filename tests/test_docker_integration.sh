@@ -201,12 +201,36 @@ REPORT="${WORK_DIR}/integration_test_report.txt"
             indel_ins=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INS' 2>/dev/null || echo 0)
             indel_del=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=DEL' 2>/dev/null || echo 0)
             inv=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=INV' 2>/dev/null || echo 0)
+            cpx=$(zgrep -v '^#' "${vcf}" 2>/dev/null | grep -c 'SVTYPE=CPX' 2>/dev/null || echo 0)
 
             echo "  SNVs:       ${snv}"
             echo "  Insertions: ${indel_ins}"
             echo "  Deletions:  ${indel_del}"
             echo "  Inversions: ${inv}"
+            echo "  Complex:    ${cpx}"
         done
+    fi
+
+    echo ""
+    echo "Expected Variants"
+    echo "-----------------"
+
+    # Check for expected CPX variant — must match .github/workflows/docker-integration.yml
+    EXPECTED_CPX_ID="chr17:9958130-12017414-1028973-CPX-406"
+    CPX_FOUND=false
+
+    for vcf in ${VCF_FILES}; do
+        if zgrep -q "${EXPECTED_CPX_ID}" "${vcf}" 2>/dev/null; then
+            CPX_FOUND=true
+            break
+        fi
+    done
+
+    if [[ "${CPX_FOUND}" == "true" ]]; then
+        echo "  ✓ ${EXPECTED_CPX_ID}"
+    else
+        echo "  ✗ ${EXPECTED_CPX_ID} (NOT FOUND)"
+        PASS=false
     fi
 
     echo ""
