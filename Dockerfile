@@ -82,7 +82,8 @@ RUN AGGLOVAR_OVERLAP=$(python3 -c "import agglovar.pairwise.overlap._overlap as 
 # which Polars >= 1.38 rejects when building a Float64 Series via map_elements.
 # This patch changes "return 1 if ... else 0" to "return 1.0 if ... else 0.0".
 RUN AGGLOVAR_SEQMATCH=$(python3 -c "import agglovar.seqmatch as m; print(m.__file__)") && \
-    sed -i 's/return 1 if seq_a\.upper() == seq_b\.upper() else 0$/return 1.0 if seq_a.upper() == seq_b.upper() else 0.0/' "$AGGLOVAR_SEQMATCH" && \
+    sed -i 's/return 1 if seq_a\.upper() == seq_b\.upper() else 0\s*$/return 1.0 if seq_a.upper() == seq_b.upper() else 0.0/' "$AGGLOVAR_SEQMATCH" && \
+    grep -q 'return 1\.0 if seq_a\.upper() == seq_b\.upper() else 0\.0' "$AGGLOVAR_SEQMATCH" || { echo "ERROR: seqmatch patch failed" >&2; exit 1; } && \
     find "$(dirname "$AGGLOVAR_SEQMATCH")/__pycache__" -name "*.pyc" -delete 2>/dev/null || true && \
     python3 -c "import importlib; import agglovar.seqmatch as m; importlib.reload(m); print('✓ Patched agglovar seqmatch: int -> float in match_prop()')"
 
