@@ -156,9 +156,9 @@ if [[ -n "${ALIGN_FILES}" ]]; then
     echo "${ALIGN_FILES}" | head -10 | sed 's/^/  /'
 fi
 
-# Verify a known CPX variant is called. Use python3 gzip module to reliably
-# read bgzf-compressed VCF files (zgrep can be unreliable with block-gzipped
-# files on some systems).
+# Verify a known CPX variant is called (ID: chr17:9958130-12017414-1028973-CPX-406).
+# Use python3 gzip module to reliably read bgzf-compressed VCF files (zgrep can
+# be unreliable with block-gzipped files on some systems).
 EXPECTED_CPX_SEQ="TGAAGTCACATTCTGAGGTACTGGGGGTTACAACTTAACAAATGGATAACATATGAGTTTTCTGAAAGGACACAATTCAAGTCATAACAGTATAAGAACATGGGAATATACTATGATGTTAGGTTCAAATAACAGGAAAAAAGTTGCACAATGAAAGGACCCTAAATATGAGACACGAAATATATCTGATGCATATATTAGTATTAGTATATATTATGAGATATTTGTATATAAATAATTAGATATTACATAAAATATATATTATATAAAATATATTATATTGTATAATTTTTAAATAAGGCTACTTTTTCAATGTCTTACTAGTTTTTTCACAATGAATATATGTTATTCTTACAGAGACCAAAGTGCTGTTTTTAACAAATTGTTGCACTCTCTCTGTTTCTCT"
 NA_VCF="${WORK_DIR}/NA19240.vcf.gz"
 if [[ -f "${NA_VCF}" ]]; then
@@ -167,6 +167,8 @@ import gzip, sys
 seq, vcf = sys.argv[1], sys.argv[2]
 with gzip.open(vcf, 'rt') as f:
     for line in f:
+        if line.startswith('#'):
+            continue
         if seq in line:
             sys.exit(0)
 sys.exit(1)
