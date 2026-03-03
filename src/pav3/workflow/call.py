@@ -1,7 +1,6 @@
 """Variant calling workflow tasks"""
 
 from collections.abc import Iterable
-
 import logging
 import os
 from pathlib import Path
