@@ -1,7 +1,7 @@
 """Variant calling workflow tasks"""
 
 from collections.abc import Iterable
-import itertools
+
 import logging
 import os
 from pathlib import Path
@@ -121,8 +121,8 @@ def merge_haplotypes(
         for chrom in chrom_list:
             df_chrom_list = []
 
-            for vartype, filter_pass in itertools.product(vartype_list, (True, False)):
-                logger.debug('%sMerging chromosome %s (vartype=%s, pass=%s): ' % (log_prefix, chrom, vartype, filter_pass))
+            for vartype in vartype_list:
+                logger.debug('%sMerging chromosome %s (vartype=%s): ' % (log_prefix, chrom, vartype))
 
                 pre_filter = [
                     pl.col('chrom') == chrom,
@@ -130,24 +130,30 @@ def merge_haplotypes(
                     pl.concat_list(
                         *(['chrom', 'pos', 'end', 'varlen'] if vartype != 'SNV' else ['chrom', 'pos', 'alt'])
                     ).is_first_distinct(),
-                    (
-                        pl.col('filter').list.len() == 0
-                        if filter_pass else
-                        pl.col('filter').list.len() > 0
-                    )
                 ]
 
                 next_filename = temp_file_container.next(
-                    prefix=f'split_{chrom}_{vartype if vartype else vartype}_{filter_pass}_'
+                    prefix=f'split_{chrom}_{vartype}_'
                 )
 
                 df_chrom_list.append(next_filename)
+
+                dedup_cols = ['chrom', 'pos', 'end', 'varlen'] if vartype != 'SNV' else ['chrom', 'pos', 'alt']
 
                 (
                     merge_runner(
                         callsets,
                         retain_index=True,
                         pre_filter=pre_filter,
+                    )
+                    .sort(
+                        *dedup_cols,
+                        pl.col('mg_src').list.len(),
+                        pl.col('filter').list.len(),
+                        descending=[False] * len(dedup_cols) + [True, False],
+                    )
+                    .filter(
+                        pl.concat_list(*dedup_cols).is_first_distinct()
                     )
                     .sort(merge_sort_expr)
                     .with_columns(agglovar.util.var.id_version_expr())
