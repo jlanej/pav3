@@ -134,11 +134,17 @@ INFO_FIELDS = [
     ),
     InfoField(
         'CPX_REF_TRACE', '.', 'String',
-        'Reference trace for complex variants',
+        'Reference trace for complex variants. Colon-delimited list of SV types and lengths from the reference'
+        ' perspective (e.g. DEL[413]:INV[118,322]:DEL[50,040]). Types include DEL, INS, INV, and DUP.',
     ),
     InfoField(
         'CPX_QRY_TRACE', '.', 'String',
-        'Query trace for complex variants',
+        'Query trace for complex variants. Colon-delimited list describing the query path through template'
+        ' switches, duplications, and insertions (e.g. TS[413(-)]:DUP[118,322-120,702(-)]:TS[168,775(+)]).'
+        ' Elements: TS[bp(strand)] = template switch (gap in reference bp with strand orientation),'
+        ' DUP[ref_len-qry_len(strand)] = duplicated aligned segment,'
+        ' INS[bp(strand)] = inserted unaligned segment,'
+        ' TSCHR[chrom-pos(strand)] = inter-chromosomal template switch.',
     ),
     InfoField(
         'QUERY', '.', 'String',
