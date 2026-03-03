@@ -382,6 +382,28 @@ def qry_trace_str(
 ) -> str:
     """Get a string representing the query path through template switches, duplicated regions, and insertions.
 
+    The output is a colon-delimited string of structural elements describing how the query sequence
+    maps back to the reference, written to the VCF INFO field CPX_QRY_TRACE.
+
+    Elements:
+        * TS[bp(strand)]: Template switch — a gap of `bp` reference bases between the previous
+          segment and this aligned segment, with `strand` indicating the alignment orientation
+          ('+' = forward, '-' = reverse).
+        * DUP[ref_len-qry_len(strand)]: Duplicated aligned segment — `ref_len` bases on the
+          reference aligned to `qry_len` bases on the query.
+        * INS[bp(strand)]: Inserted unaligned segment — `bp` query bases with no reference
+          alignment.
+        * TSCHR[chrom-pos(strand)]: Inter-chromosomal template switch — alignment jumps to
+          a different chromosome.
+
+    Example: ``TS[413(-)]:DUP[118,322-120,702(-)]:TS[168,775(+)]``
+        * Skip 413 bp on the reference (reverse orientation)
+        * 118,322 bp reference / 120,702 bp query aligned segment (reverse)
+        * Skip 168,775 bp on the reference (forward orientation)
+
+    The companion field CPX_REF_TRACE (see ``ref_trace_str``) describes the same event from the
+    reference perspective using SV type labels (DEL, INS, INV, DUP).
+
     :param df_segment: Segment table.
     :param is_pass: Variant passed filters. If True, poor alignment segments are removed from the variant call,
         otherwise, they are retained and the full erroneous CSV structure is reported as a filtered variant. If
@@ -461,6 +483,24 @@ def ref_trace_str(
         with_len: bool = True,
 ):
     """Get reference structure string describing a complex SV from the reference perspective.
+
+    The output is a colon-delimited string of SV types (and optionally their lengths) describing
+    what happened on the reference, written to the VCF INFO field CPX_REF_TRACE.
+
+    Elements (with ``with_len=True``):
+        * DEL[bp]: Deletion of `bp` reference bases.
+        * INS[bp]: Insertion of `bp` bases.
+        * INV[bp]: Inversion of `bp` reference bases.
+        * DUP[bp]: Duplication of `bp` reference bases.
+
+    Example: ``DEL[413]:INV[118,322]:DEL[50,040]``
+        * 413 bp deletion, followed by a 118,322 bp inversion, followed by a 50,040 bp deletion.
+
+    When ``with_len=False``, only the type labels are included (e.g. ``DEL:INV:DEL``), which is
+    used for the variant subtype field.
+
+    The companion field CPX_QRY_TRACE (see ``qry_trace_str``) describes the same event from the
+    query perspective using template switches and aligned/unaligned segments.
 
     :param df_ref_trace: Reference trace table.
     :param with_len: Whether to include the length of each segment in the structure string.
